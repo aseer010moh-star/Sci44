@@ -84,7 +84,7 @@
                 <label>الكود:</label>
                 <input type="password" id="student-code" class="form-control" placeholder="••••">
             </div>
-            <div id="login-error" class="login-error">يرجى إدخال الاسم ثلاثياً وكود صحيح من 300 إلى 400.</div>
+            <div id="login-error" class="login-error">الكود غير صحيح.</div>
             <button type="button" class="btn-main" id="start-btn" onclick="verifyAndStart()">دخول الاختبار</button>
 
             <div class="footer-text">
@@ -520,13 +520,13 @@
 
             const nameParts = name.split(/\s+/).filter(Boolean);
             if (nameParts.length < 3) {
-                errorDiv.innerText = "يرجى إدخال الاسم ثلاثياً قبل دخول الاختبار.";
+                errorDiv.innerText = "يرجى إدخال الاسم ثلاثياً.";
                 errorDiv.style.display = 'block';
                 return;
             }
 
             if (!/^\d+$/.test(codeStr) || codeNum < 300 || codeNum > 400) {
-                errorDiv.innerText = "الكود غير صحيح. يجب إدخال كود من 300 إلى 400.";
+                errorDiv.innerText = "الكود غير صحيح.";
                 errorDiv.style.display = 'block';
                 return;
             }
