@@ -84,7 +84,7 @@
                 <label>الكود:</label>
                 <input type="password" id="student-code" class="form-control" placeholder="••••">
             </div>
-            <div id="login-error" class="login-error">الكود غير صحيح أو تم استخدامه مسبقاً على هذا الجهاز.</div>
+            <div id="login-error" class="login-error">يرجى إدخال الاسم ثلاثياً وكود صحيح من 300 إلى 400.</div>
             <button type="button" class="btn-main" id="start-btn" onclick="verifyAndStart()">دخول الاختبار</button>
 
             <div class="footer-text">
@@ -508,14 +508,6 @@
             }
         });
 
-        window.addEventListener("beforeunload", function (e) {
-            if (document.getElementById('exam-section').style.display === 'block' && !examLocked) {
-                if (activeCode) localStorage.setItem("used_code_amin2027_300_400_" + activeCode, "1");
-                e.preventDefault();
-                e.returnValue = "";
-            }
-        });
-
         function verifyAndStart() {
             const nameField = document.getElementById('student-name');
             const codeField = document.getElementById('student-code');
@@ -539,16 +531,20 @@
                 return;
             }
 
-            if (localStorage.getItem("used_code_amin2027_300_400_" + codeStr) === "1") {
-                errorDiv.innerText = "هذا الكود مستخدم مسبقاً على هذا الجهاز.";
-                errorDiv.style.display = 'block';
-                return;
-            }
-
             activeCode = codeStr;
-            localStorage.setItem("used_code_amin2027_300_400_" + activeCode, "1");
             localStorage.setItem("amin2027_student_name", name);
 
+            currentIdx = 0;
+            userAnswers = new Array(totalQuestions).fill(null);
+            timeLeft = 2400;
+            eliminateUsed = false;
+            hintCount = 2;
+            tabSwitchCount = 0;
+            examLocked = false;
+
+            document.getElementById('hint-count').innerText = hintCount;
+            document.getElementById('eliminate-btn').style.opacity = '1';
+            document.getElementById('hint-btn').style.opacity = '1';
             errorDiv.style.display = 'none';
             document.getElementById('display-name').innerText = name;
             document.getElementById('login-section').style.display = 'none';
@@ -698,3 +694,71 @@
                 document.getElementById('formScore').value = scoreText;
                 document.getElementById('formMistakes').value = mistakesText;
                 document.getElementById('resultForm').submit();
+            });
+        }
+
+        function forceSubmitCheating() {
+            if (examLocked) return;
+            examLocked = true;
+            clearInterval(timerInterval);
+            applyBlur(false);
+
+            const name = localStorage.getItem("amin2027_student_name") || "غير محدد";
+            const score = calculateCurrentScore();
+            const scoreText = score + " / 40";
+            const mistakesText = "قفل بسبب الخروج عند س" + (currentIdx + 1) + "\n" + collectMistakesText();
+
+            document.getElementById('exam-section').style.display = 'none';
+            document.getElementById('result-section').style.display = 'block';
+            document.getElementById('report-items-container').innerHTML =
+                "<div class='report-item' style='color:#f87171;'>الاسم: " + name + " | الدرجة: " + scoreText + " (قفل بسبب تكرار الخروج)</div>";
+
+            sendCompactReport("غلق اختبار 4 - " + name + " (" + scoreText + ")", name, scoreText, mistakesText);
+        }
+
+        function confirmAndSubmit() {
+            if (confirm("تأكيد تسليم الاختبار؟")) submitExam("تسليم عادي");
+        }
+
+        function submitExam() {
+            if (examLocked) return;
+            examLocked = true;
+            clearInterval(timerInterval);
+            applyBlur(false);
+
+            const totalScore = calculateCurrentScore();
+            const scoreText = totalScore + " / 40";
+            const studentName = localStorage.getItem("amin2027_student_name") || "غير محدد";
+            const mistakesText = collectMistakesText();
+
+            let reportHtml = "<div style='font-size:1.05rem; color:#34d399; margin-bottom:10px; font-weight:bold;'>الدرجة: " + scoreText + "</div>";
+            questionsData.forEach(function (q, idx) {
+                const uAns = userAnswers[idx];
+                const isOk = (uAns === q.correct);
+                reportHtml +=
+                    "<div class='report-item' style='color:" + (isOk ? "#34d399" : "#f87171") + "'>" +
+                    "<strong>س" + (idx + 1) + " (" + q.score + " د):</strong> " + (isOk ? "صح" : "خطأ") + "<br>" +
+                    "إجابة الطالب: " + (uAns !== null ? q.options[uAns] : "لم يُجب") + "<br>" +
+                    "الإجابة الصحيحة: " + q.options[q.correct] +
+                    "</div>";
+            });
+
+            document.getElementById('report-items-container').innerHTML = reportHtml;
+            document.getElementById('exam-section').style.display = 'none';
+            document.getElementById('result-section').style.display = 'block';
+
+            sendCompactReport("نتيجة اختبار 4 - " + studentName + " (" + scoreText + ")", studentName, scoreText, mistakesText);
+        }
+
+        function verifyPin() {
+            const pin = document.getElementById('pin-input').value.trim();
+            if (pin === "200") {
+                document.getElementById('error-msg').style.display = 'none';
+                document.getElementById('report-content').style.display = 'block';
+            } else {
+                document.getElementById('error-msg').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
